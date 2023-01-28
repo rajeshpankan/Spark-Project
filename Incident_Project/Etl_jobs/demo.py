@@ -9,7 +9,7 @@ def demo_function():
     
     spark_sql_object = SparkSql(spark, 'inc')
     databases = spark_sql_object.show_all_database_in_hive()
-    databases.show()
+    # databases.show()
     
     spark_reader = sparkReader()
     df = spark_reader.readCsvFromSpark(spark,'hdfs:///user/inc/main_data/')
@@ -19,7 +19,6 @@ def demo_function():
     df = spark_sql_object.read_data("incident_data")
     # df.show(3)
     
-    spark_object.info("******************************Success******************************************")
     # ## spark_sql_object.WriteTotable()
 
     df_status=spark_sql_object.createDim("incident_data","active", "active_status")
@@ -34,8 +33,17 @@ def demo_function():
 
     df_callerDim=spark_sql_object.createDim("incident_data","caller_id", "caller_id")
     spark_sql_object.WriteTotable(df_callerDim, "inc.Dim_Caller")
-    spark_object.info("******************************Success and completed******************************************")
+    
+    
+    fact_df = spark_reader.dataframe_join(df, df_status, "active", "active_status", {"id":"active_id"},["active_status"])
+    
+    fact_df = spark_reader.dataframe_join(fact_df, df_inc_state, "incident_state","incident_state", {"id":"state_id"})
+    # fact_df.show()
 
+    fact_df = spark_reader.dataframe_join(fact_df, df_callerDim, "caller_id",'caller_id', {'id':"call_id"})
+
+    fact_df.printSchema()
+    fact_df.select("call_id").show()
     spark_object.stop_spark()
     
     
